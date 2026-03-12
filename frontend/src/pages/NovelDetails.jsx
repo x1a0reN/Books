@@ -81,6 +81,27 @@ export default function NovelDetails() {
     } catch (e) { console.error(e); }
   };
 
+  const handleDownloadTxt = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const resp = await fetch(`/api/download/${id}`);
+      if (!resp.ok) throw new Error('Download failed');
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${novel?.title || id}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Download error:', e);
+      alert('下载失败，请稍后再试');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (loading) return <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>加载中...</div>;
   if (!novel) return <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>未找到小说</div>;
 
@@ -119,7 +140,7 @@ export default function NovelDetails() {
               <span>·</span>
               <span>{novel.status || '连载中'}</span>
               <span>·</span>
-              <span>{mockData.wordCount}</span>
+              <span>{novel.word_count || mockData.wordCount}</span>
             </p>
             <div style={{ marginTop: '0.8rem' }}>
               <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)' }}>番茄原创</span>
