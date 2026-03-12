@@ -332,23 +332,26 @@ export default function NovelDetails() {
 
       {/* Chapter List Modal */}
       {showChapterList && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 999,
-          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-          animation: 'fadeIn 0.2s ease-out'
-        }}>
-          {/* Click outside to close */}
-          <div style={{ flex: 1 }} onClick={() => setShowChapterList(false)} />
-          
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setShowChapterList(false); }}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 999,
+            display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+        >
           {/* Modal Content */}
-          <div style={{
-            height: '85vh', backgroundColor: '#1e1e1e',
-            borderTopLeftRadius: '16px', borderTopRightRadius: '16px',
-            display: 'flex', flexDirection: 'column',
-            animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            overflow: 'hidden'
-          }}>
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              height: '85vh', backgroundColor: '#1e1e1e',
+              borderTopLeftRadius: '16px', borderTopRightRadius: '16px',
+              display: 'flex', flexDirection: 'column',
+              animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+              overflow: 'hidden'
+            }}
+          >
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.2rem', borderBottom: '1px solid #2a2a2a' }}>
               <ChevronDown size={28} onClick={() => setShowChapterList(false)} style={{ color: '#aaa', cursor: 'pointer' }} />
@@ -364,7 +367,7 @@ export default function NovelDetails() {
             </div>
             
             {/* List */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0 1.2rem' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 1.2rem', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
               {(isReversed ? [...chapters].reverse() : chapters).map((chap, idx) => (
                 <div 
                   key={chap.chapter_id} 
