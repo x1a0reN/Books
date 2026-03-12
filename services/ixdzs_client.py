@@ -72,14 +72,14 @@ async def close_client():
         _client = None
 
 
-async def _fetch_with_challenge(url: str) -> httpx.Response:
+async def _fetch_with_challenge(url: str, params: dict = None) -> httpx.Response:
     """
     Fetch a page, handling ixdzs8's JS security challenge.
     The site sometimes returns a small HTML page with a JS token;
     we extract the token and re-request with ?challenge=<token>.
     """
     client = await get_client()
-    resp = await client.get(url)
+    resp = await client.get(url, params=params)
     resp.raise_for_status()
 
     # Detect the challenge page (very short HTML with a token)
@@ -119,7 +119,7 @@ async def search_novels(keyword: str, page: int = 1) -> dict:
     Returns { results: [...], keyword, page }
     """
     client = await get_client()
-    resp = await client.get("/bsearch", params={"q": keyword})
+    resp = await client.get("/bsearch", params={"q": keyword, "page": page})
     resp.raise_for_status()
 
     soup = BeautifulSoup(resp.text, "lxml")
@@ -486,7 +486,8 @@ async def get_ranking(ranking_type: str = "hot", page: int = 1) -> dict:
         return cached
 
     url = f"/{ranking_type}/"
-    resp = await _fetch_with_challenge(url)
+    params = {"page": page} if page > 1 else {}
+    resp = await _fetch_with_challenge(url, params=params)
     resp.raise_for_status()
 
     soup = BeautifulSoup(resp.text, "lxml")

@@ -10,7 +10,7 @@ Endpoints:
 """
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,7 +24,7 @@ class SyncProgressRequest(BaseModel):
     novel_id: str
     chapter_id: str = ""
     chapter_title: str = ""
-    progress_percent: float = 0.0
+    progress_percent: float = Field(default=0.0, ge=0.0, le=100.0)
 
 
 @router.post("/sync")

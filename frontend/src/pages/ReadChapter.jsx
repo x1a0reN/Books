@@ -107,17 +107,18 @@ export default function ReadChapter() {
   // 获取电池信息
   useEffect(() => {
     let batteryConfig = null;
+    let batteryHandler = null;
     if ('getBattery' in navigator) {
       navigator.getBattery().then(battery => {
         batteryConfig = battery;
-        const updateBattery = () => setBatteryLevel(Math.floor(battery.level * 100));
-        updateBattery();
-        battery.addEventListener('levelchange', updateBattery);
+        batteryHandler = () => setBatteryLevel(Math.floor(battery.level * 100));
+        batteryHandler();
+        battery.addEventListener('levelchange', batteryHandler);
       }).catch(() => {});
     }
     return () => {
-      if (batteryConfig) {
-        batteryConfig.removeEventListener('levelchange', () => {});
+      if (batteryConfig && batteryHandler) {
+        batteryConfig.removeEventListener('levelchange', batteryHandler);
       }
     };
   }, []);

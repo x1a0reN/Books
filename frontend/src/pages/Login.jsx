@@ -34,7 +34,7 @@ export default function Login() {
         borderRadius: '0 0 32px 32px',
         textAlign: 'center'
       }}>
-        <div onClick={() => navigate(-1)} style={{ position: 'absolute', top: '1rem', left: '1rem', color: '#fff', cursor: 'pointer' }}>
+        <div onClick={() => navigate('/')} style={{ position: 'absolute', top: '1rem', left: '1rem', color: '#fff', cursor: 'pointer' }}>
           <ArrowLeft size={24} />
         </div>
         <div style={{ marginTop: '1rem' }}>

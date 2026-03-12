@@ -13,8 +13,13 @@ Endpoints:
 """
 
 from fastapi import APIRouter, HTTPException, Query
+import logging
 
 from services import ixdzs_client
+
+logger = logging.getLogger(__name__)
+
+_ERR = "数据源暂时不可用，请稍后重试"
 
 router = APIRouter(prefix="/api/proxy", tags=["Proxy"])
 
@@ -25,7 +30,8 @@ async def search(q: str = Query(..., min_length=1), page: int = Query(1, ge=1)):
     try:
         return await ixdzs_client.search_novels(q, page)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Source site error: {e}")
+        logger.error("search error: %s", e, exc_info=True)
+        raise HTTPException(status_code=502, detail=_ERR)
 
 
 @router.get("/novel/{novel_id}")
@@ -34,7 +40,8 @@ async def novel_detail(novel_id: str):
     try:
         return await ixdzs_client.get_novel_detail(novel_id)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Source site error: {e}")
+        logger.error("novel_detail error: %s", e, exc_info=True)
+        raise HTTPException(status_code=502, detail=_ERR)
 
 
 @router.get("/novel/{novel_id}/chapters")
@@ -43,7 +50,8 @@ async def novel_chapters(novel_id: str):
     try:
         return await ixdzs_client.get_chapters(novel_id)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Source site error: {e}")
+        logger.error("chapters error: %s", e, exc_info=True)
+        raise HTTPException(status_code=502, detail=_ERR)
 
 
 @router.get("/novel/{novel_id}/chapter/{chapter_id}")
@@ -52,7 +60,8 @@ async def chapter_content(novel_id: str, chapter_id: str):
     try:
         return await ixdzs_client.get_chapter_content(novel_id, chapter_id)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Source site error: {e}")
+        logger.error("chapter_content error: %s", e, exc_info=True)
+        raise HTTPException(status_code=502, detail=_ERR)
 
 
 @router.get("/categories")
@@ -61,7 +70,8 @@ async def categories():
     try:
         return await ixdzs_client.get_categories()
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Source site error: {e}")
+        logger.error("categories error: %s", e, exc_info=True)
+        raise HTTPException(status_code=502, detail=_ERR)
 
 
 @router.get("/category/{category_id}")
@@ -70,7 +80,8 @@ async def category_novels(category_id: str, page: int = Query(1, ge=1)):
     try:
         return await ixdzs_client.get_category_novels(category_id, page)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Source site error: {e}")
+        logger.error("category_novels error: %s", e, exc_info=True)
+        raise HTTPException(status_code=502, detail=_ERR)
 
 
 @router.get("/recommendations")
@@ -79,7 +90,8 @@ async def recommendations():
     try:
         return await ixdzs_client.get_recommendations()
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Source site error: {e}")
+        logger.error("recommendations error: %s", e, exc_info=True)
+        raise HTTPException(status_code=502, detail=_ERR)
 
 
 @router.get("/ranking/{ranking_type}")
@@ -88,4 +100,5 @@ async def ranking(ranking_type: str = "hot", page: int = Query(1, ge=1)):
     try:
         return await ixdzs_client.get_ranking(ranking_type, page)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Source site error: {e}")
+        logger.error("ranking error: %s", e, exc_info=True)
+        raise HTTPException(status_code=502, detail=_ERR)

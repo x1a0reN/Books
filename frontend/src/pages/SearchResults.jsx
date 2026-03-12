@@ -322,7 +322,7 @@ export default function SearchResults() {
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
                       <h3 style={{ margin: '0 0 0.3rem 0', fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {/* Highlight the matched query in the title */}
-                        {book.title.split(new RegExp(`(${query})`, 'gi')).map((part, i) => 
+                        {book.title.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')).map((part, i) => 
                           part.toLowerCase() === query.toLowerCase() ? 
                           <span key={i} style={{ color: 'var(--primary)' }}>{part}</span> : 
                           part
