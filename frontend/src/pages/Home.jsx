@@ -82,19 +82,39 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Top Navigation Tabs */}
-        <div className="scroll-row" style={{ paddingBottom: '0.5rem', gap: '1.25rem' }}>
-          {['推荐', '小说', '漫剧', '广场', '听书', '看剧', '经典', '短篇'].map((tab, idx) => (
+        {/* Discover Header */}
+        <div style={{ marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>发掘好书</h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>开启今天的奇妙阅读旅程</p>
+        </div>
+
+        {/* Quick Links / Channels */}
+        <div className="scroll-row" style={{ paddingBottom: '0.5rem', gap: '0.8rem' }}>
+          {[
+            { label: '热门排行', action: () => document.getElementById('ranking-section')?.scrollIntoView({ behavior: 'smooth' }) },
+            { label: '玄幻修仙', action: () => navigate('/category/1') },
+            { label: '都市爽文', action: () => navigate('/category/3') },
+            { label: '科幻末世', action: () => navigate('/category/6') },
+            { label: '网游动漫', action: () => navigate('/category/5') },
+            { label: '完结优选', action: () => { handleRankingTabSwitch('end'); document.getElementById('ranking-section')?.scrollIntoView({ behavior: 'smooth' }); } },
+          ].map((item, idx) => (
             <div 
               key={idx} 
+              onClick={item.action}
               style={{ 
-                fontSize: idx === 0 ? '1.1rem' : '1rem', 
-                fontWeight: idx === 0 ? 600 : 400, 
-                color: idx === 0 ? 'var(--text-main)' : 'var(--text-secondary)',
-                whiteSpace: 'nowrap'
+                backgroundColor: 'var(--bg-secondary)',
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
+                fontSize: '0.9rem',
+                fontWeight: 500,
+                color: 'var(--text-main)',
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+                border: '1px solid var(--border-color)',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
               }}
             >
-              {tab}
+              {item.label}
             </div>
           ))}
         </div>
@@ -103,7 +123,7 @@ export default function Home() {
       <div className="container" style={{ padding: '0 1rem' }}>
         
         {/* ═══ Ranking Section ═══ */}
-        <section className="card" style={{ marginTop: '0.5rem', padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px' }}>
+        <section id="ranking-section" className="card" style={{ marginTop: '0.5rem', padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px' }}>
           {/* Tab headers — these are now functional */}
           <div className="scroll-row" style={{ gap: '1rem', marginBottom: '1rem', paddingBottom: '0' }}>
             {rankingTabs.map((tab) => (
