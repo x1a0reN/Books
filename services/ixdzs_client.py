@@ -182,7 +182,7 @@ async def search_novels(keyword: str, page: int = 1) -> dict:
         if img_el:
             cover_url = img_el.get("src", "") or img_el.get("data-src", "")
         if not cover_url and novel_id:
-            cover_url = f"https://img.ixdzs8.com/files/article/image/{novel_id}/{novel_id}s.jpg"
+            cover_url = ""  # Will be enriched below via og:image
 
         results.append({
             "novel_id": novel_id,
@@ -192,6 +192,14 @@ async def search_novels(keyword: str, page: int = 1) -> dict:
             "cover_url": cover_url,
             "url": href,
         })
+
+    # Enrich missing covers via og:image from detail pages
+    sem = asyncio.Semaphore(5)
+    async def _enrich_cover(item):
+        if not item.get("cover_url") and item.get("novel_id"):
+            async with sem:
+                item["cover_url"] = await _fetch_cover_url(item["novel_id"])
+    await asyncio.gather(*[_enrich_cover(r) for r in results])
 
     return {"results": results, "keyword": keyword, "page": page}
 
@@ -423,6 +431,15 @@ async def get_category_novels(category_id: str, page: int = 1) -> dict:
     soup = BeautifulSoup(resp.text, "lxml")
     novels = _parse_novel_list(soup)
 
+    # Enrich covers for novels missing them
+    novels_needing_covers = [n for n in novels if not n.get("cover_url")]
+    if novels_needing_covers:
+        tasks = [_fetch_cover_url(n["novel_id"]) for n in novels_needing_covers]
+        cover_urls = await asyncio.gather(*tasks)
+        for n, url in zip(novels_needing_covers, cover_urls):
+            if url:
+                n["cover_url"] = url
+
     return {"category_id": category_id, "page": page, "novels": novels}
 
 
@@ -611,9 +628,9 @@ def _parse_novel_list(container) -> list:
         img_el = li.select_one("img")
         if img_el:
             cover_url = img_el.get("src", "") or img_el.get("data-src", "")
-        # Fallback cover (#8)
-        if not cover_url and nid:
-            cover_url = f"https://img.ixdzs8.com/files/article/image/{nid}/{nid}s.jpg"
+        # Leave empty — will be enriched at the end via og:image
+        if not cover_url:
+            cover_url = ""
 
         # Extract description text (#7)
         description = ""
@@ -665,9 +682,9 @@ def _parse_novel_list(container) -> list:
                 if img_el:
                     cover_url = img_el.get("src", "") or img_el.get("data-src", "")
 
-            # Fallback cover (#8)
-            if not cover_url and nid:
-                cover_url = f"https://img.ixdzs8.com/files/article/image/{nid}/{nid}s.jpg"
+            # Leave empty — will be enriched at the end via og:image
+            if not cover_url:
+                cover_url = ""
 
             novels.append({
                 "novel_id": nid,
