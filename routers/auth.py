@@ -49,10 +49,13 @@ class RefreshRequest(BaseModel):
 
 # ── Dependency: current user ────────────────────────────
 async def get_current_user(
-    authorization: str = Header(...),
+    authorization: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """Extract and validate the current user from the Authorization header."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header missing or invalid")
+    
     token = authorization.replace("Bearer ", "")
     payload = decode_token(token)
     if not payload or payload.get("type") != "access":

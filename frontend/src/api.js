@@ -36,8 +36,13 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
     
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+    // Treat both 401 (Unauthorized) and 422 from auth endpoints as auth failures
+    const isAuthError = status === 401 || 
+      (status === 422 && error.response?.data?.detail?.[0]?.loc?.includes('authorization'));
+    
+    if (isAuthError && !originalRequest._retry) {
       const path = window.location.pathname;
       if (path === '/login' || path === '/register') {
         return Promise.reject(error);
