@@ -11,6 +11,7 @@ export default function Home() {
   const [activeRankingTab, setActiveRankingTab] = useState('hot');
   const navigate = useNavigate();
   const [recPage, setRecPage] = useState(0);
+  const [greetingInfo, setGreetingInfo] = useState({ text: '开启今天的阅读旅程', img: '/pets/pet_morning.png' });
 
   const rankingTabs = [
     { key: 'hot', label: '推荐榜' },
@@ -19,6 +20,16 @@ export default function Home() {
   ];
 
   useEffect(() => {
+    // Dynamic greeting based on time
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      setGreetingInfo({ text: '早上好，来读书吧~', img: '/pets/pet_morning.png' });
+    } else if (hour >= 12 && hour < 18) {
+      setGreetingInfo({ text: '下午好，放松一下~', img: '/pets/pet_afternoon.png' });
+    } else {
+      setGreetingInfo({ text: '晚上好，睡前看会书~', img: '/pets/pet_evening.png' });
+    }
+
     const fetchHomeData = async () => {
       try {
         const [recRes, rankRes] = await Promise.all([
@@ -82,41 +93,31 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Discover Header */}
-        <div style={{ marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>发掘好书</h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>开启今天的奇妙阅读旅程</p>
-        </div>
-
-        {/* Quick Links / Channels */}
-        <div className="scroll-row" style={{ paddingBottom: '0.5rem', gap: '0.8rem' }}>
-          {[
-            { label: '热门排行', action: () => document.getElementById('ranking-section')?.scrollIntoView({ behavior: 'smooth' }) },
-            { label: '玄幻修仙', action: () => navigate('/category/1') },
-            { label: '都市爽文', action: () => navigate('/category/3') },
-            { label: '科幻末世', action: () => navigate('/category/6') },
-            { label: '网游动漫', action: () => navigate('/category/5') },
-            { label: '完结优选', action: () => { handleRankingTabSwitch('end'); document.getElementById('ranking-section')?.scrollIntoView({ behavior: 'smooth' }); } },
-          ].map((item, idx) => (
-            <div 
-              key={idx} 
-              onClick={item.action}
-              style={{ 
-                backgroundColor: 'var(--bg-secondary)',
-                padding: '0.5rem 1rem',
-                borderRadius: '20px',
-                fontSize: '0.9rem',
-                fontWeight: 500,
-                color: 'var(--text-main)',
-                whiteSpace: 'nowrap',
-                cursor: 'pointer',
-                border: '1px solid var(--border-color)',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-              }}
-            >
-              {item.label}
-            </div>
-          ))}
+        {/* Dynamic Greeting */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: '1rem',
+          backgroundColor: 'var(--bg-secondary)',
+          borderRadius: '16px',
+          padding: '1rem 1.2rem',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          border: '1px solid rgba(255,255,255,0.05)'
+        }}>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)', marginBottom: '4px' }}>
+              {greetingInfo.text}
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+              每天进步一点点
+            </p>
+          </div>
+          <img 
+            src={greetingInfo.img} 
+            alt="Pet Avatar" 
+            style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)' }} 
+          />
         </div>
       </div>
 
