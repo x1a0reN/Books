@@ -29,7 +29,9 @@ export default function NovelDetails() {
       score: (8.0 + (hash % 18) / 10).toFixed(1),
       reviews: (hash % 500 + 10) / 10 + '万人点评',
       readers: (hash % 200 + 5) / 10 + '万人',
-      comments: hash % 9000 + 1000
+      comments: hash % 9000 + 1000,
+      updateMins: hash % 60 + 1,
+      updateDays: hash % 300 + 10
     };
   }, [id]);
 
@@ -202,30 +204,63 @@ export default function NovelDetails() {
 
         {/* Description Section */}
         <div style={{ backgroundColor: '#1a1a1a', padding: '1.25rem 1rem', marginBottom: '8px' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 600, margin: '0 0 0.75rem 0', color: '#fff' }}>简介</h3>
-          <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, ...(showFullDesc ? {} : { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }) }}>
-            {novel.description || '暂无简介'}
-          </p>
-          {novel.description && novel.description.length > 80 && (
-            <span onClick={() => setShowFullDesc(v => !v)} style={{ color: '#ff7875', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-block', marginTop: '0.5rem' }}>
-              {showFullDesc ? '收起' : '展开全部'}
-            </span>
-          )}
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 600, margin: '0 0 0.75rem 0', color: '#fff' }}>书籍简介</h3>
+          <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+            {showFullDesc ? (
+              <>
+                {novel.description || '暂无简介'}
+                {novel.description && novel.description.length > 80 && (
+                  <span onClick={() => setShowFullDesc(false)} style={{ color: '#4a72b8', cursor: 'pointer', marginLeft: '4px' }}>收起</span>
+                )}
+              </>
+            ) : (
+              <>
+                {(novel.description || '暂无简介').slice(0, 80)}
+                {novel.description && novel.description.length > 80 && (
+                  <>... <span onClick={() => setShowFullDesc(true)} style={{ color: '#4a72b8', cursor: 'pointer' }}>展开</span></>
+                )}
+              </>
+            )}
+          </div>
+          
+          {/* Tags */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+            {(novel.tags && novel.tags.length > 0 ? novel.tags : [novel.category || '科幻末世', '系统', '末世', '求生', '末日求生'].slice(0, 5)).map((tag, idx) => (
+              <span key={idx} style={{ padding: '3px 8px', backgroundColor: '#2a2a2a', borderRadius: '4px', fontSize: '0.7rem', color: '#aaa' }}>
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Chapter List Entry */}
         {chapters.length > 0 && (
-          <Link to={`/read/${id}/${chapters[0].chapter_id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a1a1a', padding: '1rem', marginBottom: '8px', textDecoration: 'none', color: '#fff' }}>
-            <div>
-              <span style={{ fontSize: '1rem', fontWeight: 600 }}>目录</span>
-              <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginLeft: '0.5rem' }}>· 共{chapters.length}章</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>
-              <span>最新: {chapters[chapters.length-1]?.title || ''}</span>
-              <ChevronRight size={16} />
+          <Link to={`/read/${id}/${chapters[0].chapter_id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a1a1a', padding: '1.25rem 1rem', marginBottom: '8px', textDecoration: 'none', color: '#fff' }}>
+            <span style={{ fontSize: '1.05rem', fontWeight: 600 }}>查看目录</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
+              <span style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {mockData.updateMins}分钟前更新至{chapters[chapters.length-1]?.title || '最新章'} 连续更新{mockData.updateDays}天
+              </span>
+              <ChevronRight size={14} />
             </div>
           </Link>
         )}
+
+        {/* Reviews Section */}
+        <div style={{ backgroundColor: '#1a1a1a', padding: '1.25rem 1rem', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 600, margin: 0, color: '#e0e0e0' }}>书评 · {mockData.comments}</h3>
+            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
+              全部书评 <ChevronRight size={12} style={{ marginLeft: '2px' }} />
+            </span>
+          </div>
+          <div style={{ backgroundColor: '#222', borderRadius: '8px', padding: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>轻点评分</span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {[...Array(5)].map((_, i) => <Star key={i} size={22} color="#ff7e5f" strokeWidth={1.5} fill="transparent" />)}
+            </div>
+          </div>
+        </div>
 
         {/* Related Books */}
         {recommendations.length > 0 && (
