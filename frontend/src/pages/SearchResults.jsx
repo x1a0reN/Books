@@ -256,7 +256,7 @@ export default function SearchResults() {
               {filterTabs.map((tab) => (
                 <div 
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => { if (tab === '综合') { setActiveTab(tab); } else { alert(`"${tab}" 分类暂未开放`); } }}
                   style={{ 
                     fontSize: '0.95rem', 
                     fontWeight: activeTab === tab ? 600 : 400, 
@@ -269,7 +269,7 @@ export default function SearchResults() {
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)', fontSize: '0.85rem', paddingLeft: '1rem', borderLeft: '1px solid var(--bg-tertiary)' }}>
+            <div onClick={() => alert('筛选功能开发中')} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)', fontSize: '0.85rem', paddingLeft: '1rem', borderLeft: '1px solid var(--bg-tertiary)', cursor: 'pointer' }}>
               <Filter size={14} /> 筛选
             </div>
           </div>

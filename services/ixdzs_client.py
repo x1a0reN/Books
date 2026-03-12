@@ -182,6 +182,21 @@ async def search_novels(keyword: str, page: int = 1) -> dict:
         if img_el:
             cover_url = img_el.get("src", "") or img_el.get("data-src", "")
 
+        # Word count from <span class="size">
+        word_count = ""
+        size_el = item.select_one("span.size")
+        if size_el:
+            word_count = size_el.get_text(strip=True)
+
+        # Status from <span class="lz"> (连载) or <span class="end"> (完结)
+        status = ""
+        lz_el = item.select_one("span.lz")
+        end_el = item.select_one("span.end")
+        if lz_el:
+            status = lz_el.get_text(strip=True)
+        elif end_el:
+            status = end_el.get_text(strip=True)
+
         results.append({
             "novel_id": novel_id,
             "title": title,
@@ -189,6 +204,8 @@ async def search_novels(keyword: str, page: int = 1) -> dict:
             "description": desc,
             "cover_url": cover_url,
             "url": href,
+            "word_count": word_count,
+            "status": status,
         })
 
     return {"results": results, "keyword": keyword, "page": page}
@@ -261,6 +278,38 @@ async def get_novel_detail(novel_id: str) -> dict:
             txt_url = href if href.startswith("http") else urljoin(settings.ixdzs_base_url, href)
             break
 
+    # Word count from <span class="nsize">
+    word_count = ""
+    nsize_el = soup.select_one("span.nsize")
+    if nsize_el:
+        word_count = nsize_el.get_text(strip=True)
+    if not word_count:
+        size_el = soup.select_one("span.size")
+        if size_el:
+            word_count = size_el.get_text(strip=True)
+
+    # Status from <span class="lz"> or <span class="end">
+    if not status:
+        lz_el = soup.select_one("span.lz")
+        end_el = soup.select_one("span.end")
+        if lz_el:
+            status = lz_el.get_text(strip=True)
+        elif end_el:
+            status = end_el.get_text(strip=True)
+
+    # Heat / Popularity
+    heat = ""
+    trend_el = soup.select_one("span.trend")
+    if trend_el:
+        heat = trend_el.get_text(strip=True)
+
+    # Tags from <a href="/tags/...">
+    tags = []
+    for tag_a in soup.select("a[href*='/tags/']"):
+        tag_text = tag_a.get_text(strip=True)
+        if tag_text and len(tag_text) < 10:
+            tags.append(tag_text)
+
     return {
         "novel_id": novel_id,
         "title": title,
@@ -270,6 +319,9 @@ async def get_novel_detail(novel_id: str) -> dict:
         "status": status,
         "category": category,
         "txt_download_url": txt_url,
+        "word_count": word_count,
+        "heat": heat,
+        "tags": tags,
     }
 
 
@@ -623,6 +675,21 @@ def _parse_novel_list(container) -> list:
                 description = clean[:200]
                 break
 
+        # Word count from <span class="size">
+        word_count = ""
+        size_el = li.select_one("span.size")
+        if size_el:
+            word_count = size_el.get_text(strip=True)
+
+        # Status from <span class="lz"> or <span class="end">
+        status = ""
+        lz_el = li.select_one("span.lz")
+        end_el = li.select_one("span.end")
+        if lz_el:
+            status = lz_el.get_text(strip=True)
+        elif end_el:
+            status = end_el.get_text(strip=True)
+
         novels.append({
             "novel_id": nid,
             "title": title,
@@ -630,6 +697,8 @@ def _parse_novel_list(container) -> list:
             "cover_url": cover_url,
             "description": description,
             "url": href,
+            "word_count": word_count,
+            "status": status,
         })
 
     # Strategy 2: If no <li> results, scan all /read/ links directly

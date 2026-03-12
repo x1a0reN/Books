@@ -12,14 +12,22 @@ export default function Bookshelf() {
   const [progress, setProgress] = useState({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Wait for auth context to finish loading before checking
-    if (authLoading) return;
+  // 签到 state
+  const [signed, setSigned] = useState(() => {
+    const today = new Date().toDateString();
+    return localStorage.getItem('signDate') === today;
+  });
 
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
+  // 管理 mode
+  const [manageMode, setManageMode] = useState(false);
+  const [selectedBooks, setSelectedBooks] = useState(new Set());
+
+  // 排序 mode
+  const [sortMode, setSortMode] = useState('default');
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) { navigate('/login'); return; }
 
     const fetchBookshelf = async () => {
       setLoading(true);
@@ -28,13 +36,9 @@ export default function Bookshelf() {
           bookshelfAPI.getBookshelf(),
           readingAPI.getAllProgress()
         ]);
-        
         setBooks(shelfRes.data.books || []);
-        
         const progMap = {};
-        (progRes.data.progress || []).forEach(p => {
-          progMap[p.novel_id] = p;
-        });
+        (progRes.data.progress || []).forEach(p => { progMap[p.novel_id] = p; });
         setProgress(progMap);
       } catch (err) {
         console.error("Failed to load bookshelf", err);
@@ -42,21 +46,49 @@ export default function Bookshelf() {
         setLoading(false);
       }
     };
-
     fetchBookshelf();
   }, [isAuthenticated, authLoading, navigate]);
 
   const handleRemove = async (e, novelId) => {
     e.preventDefault();
-    if(window.confirm("确定要从书架移除这本书吗？")) {
-        try {
-            await bookshelfAPI.removeBook(novelId);
-            setBooks(books.filter(b => b.novel_id !== novelId));
-        } catch(err) {
-            console.error(err);
-        }
+    e.stopPropagation();
+    if (window.confirm('确定要从书架移除这本书吗？')) {
+      try {
+        await bookshelfAPI.removeBook(novelId);
+        setBooks(books.filter(b => b.novel_id !== novelId));
+      } catch (err) { console.error(err); }
     }
   };
+
+  const handleSign = () => {
+    const today = new Date().toDateString();
+    localStorage.setItem('signDate', today);
+    setSigned(true);
+  };
+
+  const toggleSelect = (novelId) => {
+    setSelectedBooks(prev => {
+      const next = new Set(prev);
+      if (next.has(novelId)) next.delete(novelId); else next.add(novelId);
+      return next;
+    });
+  };
+
+  const handleBatchRemove = async () => {
+    if (selectedBooks.size === 0) return;
+    if (!window.confirm(`确定移除选中的 ${selectedBooks.size} 本书吗？`)) return;
+    try {
+      await Promise.all([...selectedBooks].map(id => bookshelfAPI.removeBook(id)));
+      setBooks(books.filter(b => !selectedBooks.has(b.novel_id)));
+      setSelectedBooks(new Set());
+      setManageMode(false);
+    } catch (e) { console.error(e); }
+  };
+
+  const sortedBooks = [...books].sort((a, b) => {
+    if (sortMode === 'title') return (a.novel_title || '').localeCompare(b.novel_title || '');
+    return 0;
+  });
 
   if (authLoading || loading) {
     return (
@@ -79,20 +111,16 @@ export default function Bookshelf() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <span style={{ fontSize: '1.1rem', fontWeight: '500', color: 'rgba(255,255,255,0.9)' }}>今日暂无阅读时长</span>
           <div style={{ display: 'flex', gap: '1.2rem', color: '#fff' }}>
-            <Search size={22} onClick={() => navigate('/search')} />
-            <Gamepad2 size={22} />
-            <MoreHorizontal size={22} />
+            <Search size={22} onClick={() => navigate('/search')} style={{ cursor: 'pointer' }} />
+            <Gamepad2 size={22} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
+            <MoreHorizontal size={22} onClick={() => alert('更多功能开发中')} style={{ cursor: 'pointer' }} />
           </div>
         </div>
 
-        {/* Floating Read Card (Fake UI) */}
+        {/* Floating Read Card */}
         <div className="glass" style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          padding: '0.75rem 1rem', 
-          borderRadius: '16px',
-          marginBottom: '0.5rem'
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0.75rem 1rem', borderRadius: '16px', marginBottom: '0.5rem'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
             <div style={{ width: '40px', height: '56px', backgroundColor: '#333', borderRadius: '4px', overflow: 'hidden' }}>
@@ -103,16 +131,13 @@ export default function Bookshelf() {
               <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>为你精选的必读神作</p>
             </div>
           </div>
-          <button style={{ 
-            background: 'linear-gradient(90deg, #ff4d4f, #ff7875)', 
-            border: 'none', 
-            borderRadius: '20px', 
-            padding: '0.4rem 1rem', 
-            color: '#fff', 
-            fontWeight: 600,
-            fontSize: '0.85rem'
+          <button onClick={handleSign} disabled={signed} style={{ 
+            background: signed ? '#555' : 'linear-gradient(90deg, #ff4d4f, #ff7875)', 
+            border: 'none', borderRadius: '20px', padding: '0.4rem 1rem', 
+            color: '#fff', fontWeight: 600, fontSize: '0.85rem',
+            cursor: signed ? 'default' : 'pointer', opacity: signed ? 0.7 : 1
           }}>
-            签到
+            {signed ? '已签到' : '签到'}
           </button>
         </div>
       </div>
@@ -127,9 +152,9 @@ export default function Bookshelf() {
           </div>
           
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><ArrowDownAZ size={14} /> 综合排序</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><Filter size={14} /> 筛选</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><Settings2 size={14} /> 管理</span>
+            <span onClick={() => setSortMode(sortMode === 'title' ? 'default' : 'title')} style={{ display: 'flex', alignItems: 'center', gap: '2px', cursor: 'pointer', color: sortMode === 'title' ? 'var(--primary)' : 'var(--text-secondary)' }}><ArrowDownAZ size={14} /> 综合排序</span>
+            <span onClick={() => alert('筛选功能开发中')} style={{ display: 'flex', alignItems: 'center', gap: '2px', cursor: 'pointer' }}><Filter size={14} /> 筛选</span>
+            <span onClick={() => { setManageMode(!manageMode); setSelectedBooks(new Set()); }} style={{ display: 'flex', alignItems: 'center', gap: '2px', cursor: 'pointer', color: manageMode ? 'var(--danger)' : 'var(--text-secondary)' }}><Settings2 size={14} /> {manageMode ? '取消' : '管理'}</span>
           </div>
         </div>
 
@@ -141,63 +166,79 @@ export default function Bookshelf() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '0.5rem' }}>
-            {books.map(book => {
+            {sortedBooks.map(book => {
                const prog = progress[book.novel_id];
                return (
-                 <Link 
-                   key={book.novel_id} 
-                   to={prog ? `/read/${book.novel_id}/${prog.chapter_id}` : `/novel/${book.novel_id}`} 
-                   style={{ display: 'flex', gap: '1rem', textDecoration: 'none', color: 'inherit', position: 'relative' }}
-                 >
-                   {/* Book Cover */}
-                   <div style={{ position: 'relative', flexShrink: 0 }}>
-                     <img 
-                       src={book.novel_cover || '/placeholder.png'} 
-                       alt={book.novel_title} 
-                       style={{ width: '64px', height: '88px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} 
-                     />
-                   </div>
-                   
-                   {/* Book Info */}
-                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.4rem', paddingRight: '2rem' }}>
-                     <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                       {book.novel_title}
-                     </h3>
-                     
-                     <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                       {book.novel_author}
-                       <span style={{ margin: '0 4px', fontSize: '0.8rem', opacity: 0.5 }}>·</span>
-                       {prog ? '继续阅读' : '未读过'}
-                     </p>
-                     
-                     {prog ? (
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          进度: {prog.chapter_title}
-                        </p>
-                     ) : (
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          连载中 · 刚刚更新
-                        </p>
-                     )}
-                   </div>
-
-                   {/* Actions (Three Dots) - Clicking this requires preventing default to stop navigation */}
-                   <div 
-                     onClick={(e) => handleRemove(e, book.novel_id)}
-                     style={{ 
-                       position: 'absolute', 
-                       top: '50%', 
-                       right: '0', 
-                       transform: 'translateY(-50%)',
-                       color: 'var(--text-secondary)', 
-                       padding: '0.5rem'
-                     }}
+                 <div key={book.novel_id} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                   {manageMode && (
+                     <div onClick={() => toggleSelect(book.novel_id)} style={{
+                       width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
+                       border: selectedBooks.has(book.novel_id) ? '2px solid var(--danger)' : '2px solid var(--text-muted)',
+                       backgroundColor: selectedBooks.has(book.novel_id) ? 'var(--danger)' : 'transparent',
+                       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                     }}>
+                       {selectedBooks.has(book.novel_id) && <span style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>✓</span>}
+                     </div>
+                   )}
+                   <Link 
+                     to={prog ? `/read/${book.novel_id}/${prog.chapter_id}` : `/novel/${book.novel_id}`} 
+                     style={{ display: 'flex', gap: '1rem', textDecoration: 'none', color: 'inherit', position: 'relative', flex: 1, minWidth: 0 }}
                    >
-                     <MoreHorizontal size={20} />
-                   </div>
-                 </Link>
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <img 
+                        src={book.novel_cover || '/placeholder.png'} 
+                        alt={book.novel_title} 
+                        style={{ width: '64px', height: '88px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} 
+                      />
+                    </div>
+                    
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.4rem', paddingRight: '2rem' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {book.novel_title}
+                      </h3>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {book.novel_author}
+                        <span style={{ margin: '0 4px', fontSize: '0.8rem', opacity: 0.5 }}>·</span>
+                        {prog ? '继续阅读' : '未读过'}
+                      </p>
+                      {prog ? (
+                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                           进度: {prog.chapter_title}
+                         </p>
+                      ) : (
+                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                           连载中 · 刚刚更新
+                         </p>
+                      )}
+                    </div>
+
+                    {!manageMode && (
+                      <div 
+                        onClick={(e) => handleRemove(e, book.novel_id)}
+                        style={{ position: 'absolute', top: '50%', right: '0', transform: 'translateY(-50%)', color: 'var(--text-secondary)', padding: '0.5rem' }}
+                      >
+                        <MoreHorizontal size={20} />
+                      </div>
+                    )}
+                   </Link>
+                 </div>
                );
             })}
+          </div>
+        )}
+
+        {/* Batch Remove Bar */}
+        {manageMode && selectedBooks.size > 0 && (
+          <div style={{
+            position: 'fixed', bottom: '70px', left: 0, right: 0, padding: '0.8rem 1rem',
+            backgroundColor: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 50
+          }}>
+            <span style={{ color: 'var(--text-main)', fontSize: '0.9rem' }}>已选择 {selectedBooks.size} 本</span>
+            <button onClick={handleBatchRemove} style={{
+              background: 'var(--danger)', border: 'none', borderRadius: '20px',
+              padding: '0.5rem 1.5rem', color: '#fff', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer'
+            }}>批量移除</button>
           </div>
         )}
       </div>

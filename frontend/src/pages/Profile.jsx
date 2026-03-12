@@ -19,7 +19,7 @@ export default function Profile() {
   const menuItems = [
     { icon: BookOpen, label: '我的书架', desc: '查看收藏的小说', onClick: () => navigate('/bookshelf') },
     { icon: Clock, label: '阅读记录', desc: '查看最近阅读', onClick: () => navigate('/bookshelf') },
-    { icon: Settings, label: '设置', desc: '账号与偏好设置', onClick: () => {} },
+    { icon: Settings, label: '设置', desc: '账号与偏好设置', onClick: () => alert('设置页面开发中，敬请期待') },
   ];
 
   return (

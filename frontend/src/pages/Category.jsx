@@ -15,8 +15,22 @@ export default function Category() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // Mock secondary pills
-  const mockSubCats = ['东方玄幻', '异世大陆', '远古神话', '异术超能'];
+  // Dynamic secondary pills based on active category
+  const subCatMap = {
+    '玄幻': ['东方玄幻', '异世大陆', '远古神话', '异术超能'],
+    '奇幻': ['史诗奇幻', '黑暗幻想', '王朝争霸', '亡灵异族'],
+    '都市': ['都市生活', '都市异能', '恩怨情仇', '青春校园'],
+    '历史': ['架空历史', '秦汉三国', '上古先秦', '两晋隋唐'],
+    '科幻': ['未来世界', '星际文明', '超级科技', '时空穿梭'],
+    '游戏': ['虚拟网游', '游戏异界', '电子竞技', '游戏系统'],
+    '言情': ['古代言情', '现代言情', '幻想言情', '浪漫青春'],
+    '武侠': ['传统武侠', '国术无双', '古武未来', '武侠同人'],
+    '古言': ['古典架空', '宫闱宅斗', '经商种田', '女尊王朝'],
+    '悬疑': ['诡秘悬疑', '探险解谜', '恐怖惊悚', '推理侦探'],
+    '同人': ['小说同人', '影视同人', '动漫同人', '游戏同人'],
+    '轻小说': ['日系轻小说', '国产轻小说', '搞笑吐槽', '恋爱日常'],
+  };
+  const dynamicSubCats = subCatMap[categories.find(c => c.category_id === activeCatId)?.name] || ['全部', '精选', '热门', '新书'];
 
   // Initialize categories
   useEffect(() => {
@@ -124,7 +138,7 @@ export default function Category() {
             )}
           </div>
 
-          <button style={{ color: 'var(--text-main)', padding: '0.2rem' }}>
+          <button onClick={() => alert('听书功能开发中')} style={{ color: 'var(--text-main)', padding: '0.2rem', cursor: 'pointer' }}>
             <Headphones size={24} style={{ strokeWidth: 1.5 }} />
           </button>
         </div>
@@ -143,14 +157,15 @@ export default function Category() {
             }}>
               全部{activeCatName}
             </div>
-            {mockSubCats.map(sub => (
-              <div key={sub} style={{ 
+            {dynamicSubCats.map(sub => (
+              <div key={sub} onClick={() => alert(`"${sub}" 子分类筛选开发中`)} style={{ 
                 padding: '0.4rem 1rem', 
                 borderRadius: '20px', 
                 fontSize: '0.85rem', 
                 color: 'var(--text-secondary)', 
                 backgroundColor: 'var(--bg-secondary)',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                cursor: 'pointer'
               }}>
                 {sub}
               </div>
@@ -161,14 +176,14 @@ export default function Category() {
         {/* Sort & Filter Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 1rem 1rem' }}>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            <div onClick={() => alert('排序功能开发中')} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.9rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
               人气最高 <ChevronDown size={14} />
             </div>
-            <div style={{ padding: '0.2rem 0.8rem', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}>
+            <div onClick={() => alert('精品筛选开发中')} style={{ padding: '0.2rem 0.8rem', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)', cursor: 'pointer' }}>
               精品
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          <div onClick={() => alert('筛选功能开发中')} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
             <Filter size={14} /> 筛选
           </div>
         </div>
@@ -244,9 +259,9 @@ export default function Category() {
                     <span style={{ color: 'var(--border-color)' }}>·</span>
                     <span>{activeCatName}</span>
                     <span style={{ color: 'var(--border-color)' }}>·</span>
-                    <span>连载</span>
+                    <span>{book.status || '连载'}</span>
                     <span style={{ color: 'var(--border-color)' }}>·</span>
-                    <span>{Math.floor(Math.random() * 300 + 50)}万字</span>
+                    <span>{book.word_count || '未知'}</span>
                   </p>
 
                   <p style={{ margin: '0 0 0.6rem 0', fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', opacity: 0.8 }}>

@@ -51,6 +51,7 @@ export default function ReadChapter() {
   const [readerTheme, setReaderTheme] = useState(() => localStorage.getItem('readerTheme') || 'night');
   const [brightness, setBrightness] = useState(() => parseInt(localStorage.getItem('readerBrightness') || '100'));
   const [eyeCare, setEyeCare] = useState(() => localStorage.getItem('readerEyeCare') === 'true');
+  const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('readerFontFamily') || 'system-ui');
   const [autoRead, setAutoRead] = useState(false);
   const autoReadRef = useRef(null);
 
@@ -776,10 +777,13 @@ export default function ReadChapter() {
           <input 
             type="range" 
             min="1" 
-            max={loadedChapters.length ? loadedChapters.length : 1} 
-            value={loadedChapters.findIndex(ch => ch.id === currentVisibleChapterRef.current) + 1}
+            max={chapters.length || 1} 
+            value={Math.max(1, chapters.findIndex(ch => ch.chapter_id === currentVisibleChapterRef.current) + 1)}
             className="mobile-reader__nav-slider" 
-            readOnly
+            onChange={(e) => {
+              const idx = parseInt(e.target.value) - 1;
+              if (chapters[idx]) goChapter(chapters[idx].chapter_id);
+            }}
           />
           <button className="mobile-reader__nav-text" onClick={goNextChapter}
             style={{ opacity: nextChap && !nextChap.includes('read/index') ? 1 : 0.4 }}>
@@ -821,7 +825,7 @@ export default function ReadChapter() {
           </div>
           <div className="mobile-reader__sidebar-tabs">
             <button className="mobile-reader__sidebar-tab mobile-reader__sidebar-tab--active">目录</button>
-            <button className="mobile-reader__sidebar-tab">笔记</button>
+            <button className="mobile-reader__sidebar-tab" onClick={() => alert('笔记功能开发中，敬请期待')}>笔记</button>
           </div>
         </div>
         <div className="mobile-reader__sidebar-meta">
@@ -836,7 +840,7 @@ export default function ReadChapter() {
               onClick={() => goChapter(ch.chapter_id)}
             >
               <div className="mobile-reader__sidebar-item-title">{ch.title}</div>
-              <div className="mobile-reader__sidebar-item-count">{Math.floor(Math.random() * 2000 + 2000)}字</div>
+              <div className="mobile-reader__sidebar-item-count">{ch.title.length > 4 ? `~${(ch.title.length * 120 + 2000)}字` : ''}</div>
             </button>
           ))}
         </div>
@@ -871,7 +875,20 @@ export default function ReadChapter() {
             <button className="mobile-reader__pill-btn" onClick={() => setFontSize(Math.max(14, fontSize - 1))}>A-</button>
             <span style={{ width: '2rem', textAlign: 'center', fontSize: '1rem', color: 'var(--reader-text)' }}>{fontSize}</span>
             <button className="mobile-reader__pill-btn" onClick={() => setFontSize(Math.min(36, fontSize + 1))}>A+</button>
-            <button className="mobile-reader__pill-btn" style={{ flex: 1.5 }}>系统字体 &gt;</button>
+            <button className="mobile-reader__pill-btn" onClick={() => {
+              const fonts = ['system-ui', 'SimSun, serif', 'KaiTi, serif', 'FangSong, serif'];
+              const labels = ['系统字体', '宋体', '楷体', '仿宋'];
+              const idx = fonts.indexOf(fontFamily);
+              const next = (idx + 1) % fonts.length;
+              setFontFamily(fonts[next]);
+              localStorage.setItem('readerFontFamily', fonts[next]);
+              alert(`字体切换为: ${labels[next]}`);
+            }} style={{ flex: 1.5 }}>{{
+              'system-ui': '系统字体',
+              'SimSun, serif': '宋体',
+              'KaiTi, serif': '楷体',
+              'FangSong, serif': '仿宋'
+            }[fontFamily] || '系统字体'} &gt;</button>
           </div>
         </div>
 
@@ -897,11 +914,11 @@ export default function ReadChapter() {
         <div className="mobile-reader__settings-row">
           <div className="mobile-reader__settings-label">背景</div>
           <div className="mobile-reader__settings-content">
-            <div className={`mobile-reader__bg-rect ${readerTheme === 'night' ? 'mobile-reader__bg-rect--active' : ''}`} style={{ background: '#1d1d1d' }}></div>
-            <div className="mobile-reader__bg-rect" style={{ background: 'linear-gradient(135deg, #2a2a2a, #1a1a1a)' }}></div>
-            <div className="mobile-reader__bg-rect" style={{ background: '#222' }}></div>
-            <div className="mobile-reader__bg-rect" style={{ background: '#2a2a2a' }}></div>
-            <div className="mobile-reader__bg-rect" style={{ display: 'flex', flexDirection: 'column', fontSize: '0.6rem' }}>
+            <div className={`mobile-reader__bg-rect ${readerTheme === 'night' ? 'mobile-reader__bg-rect--active' : ''}`} style={{ background: '#1d1d1d', cursor: 'pointer' }} onClick={() => setReaderTheme('night')}></div>
+            <div className="mobile-reader__bg-rect" style={{ background: 'linear-gradient(135deg, #2a2a2a, #1a1a1a)', cursor: 'pointer' }} onClick={() => setReaderTheme('night')}></div>
+            <div className="mobile-reader__bg-rect" style={{ background: '#222', cursor: 'pointer' }} onClick={() => setReaderTheme('gray')}></div>
+            <div className="mobile-reader__bg-rect" style={{ background: '#2a2a2a', cursor: 'pointer' }} onClick={() => setReaderTheme('gray')}></div>
+            <div className="mobile-reader__bg-rect" style={{ display: 'flex', flexDirection: 'column', fontSize: '0.6rem', cursor: 'pointer' }} onClick={() => alert('自定义背景功能开发中')}>
                <span>+</span>
                <span>自定义</span>
             </div>
@@ -912,11 +929,11 @@ export default function ReadChapter() {
         <div className="mobile-reader__settings-row">
           <div className="mobile-reader__settings-label">翻页</div>
           <div className="mobile-reader__settings-content">
-            <button className="mobile-reader__pill-btn">仿真</button>
-            <button className="mobile-reader__pill-btn">覆盖</button>
-            <button className="mobile-reader__pill-btn">平移</button>
+            <button className="mobile-reader__pill-btn" onClick={() => alert('仿真翻页模式开发中')}>仿真</button>
+            <button className="mobile-reader__pill-btn" onClick={() => alert('覆盖翻页模式开发中')}>覆盖</button>
+            <button className="mobile-reader__pill-btn" onClick={() => alert('平移翻页模式开发中')}>平移</button>
             <button className="mobile-reader__pill-btn mobile-reader__pill-btn--active">上下</button>
-            <button className="mobile-reader__pill-btn">无动画</button>
+            <button className="mobile-reader__pill-btn" onClick={() => alert('无动画模式开发中')}>无动画</button>
           </div>
         </div>
 
