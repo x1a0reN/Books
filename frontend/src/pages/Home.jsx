@@ -67,8 +67,8 @@ export default function Home() {
   return (
     <div style={{ backgroundColor: 'var(--bg-color)', minHeight: '100vh', paddingBottom: '2rem' }}>
       
-      {/* Top Sticky Header */}
-      <div style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-color)', zIndex: 40, padding: '1rem 1rem 0' }}>
+      {/* Top Header (No longer sticky) */}
+      <div style={{ backgroundColor: 'var(--bg-color)', zIndex: 40, padding: '1rem 1rem 0' }}>
         {/* Search Bar */}
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1rem' }}>
           <div 
