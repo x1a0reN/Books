@@ -77,6 +77,7 @@ export default function ReadChapter() {
   const sidebarListRef = useRef(null);
   const loadedChapterIdsRef = useRef(new Set());
   const loadedChaptersRef = useRef([]);  // 始终指向最新的 loadedChapters
+  const sliderDebounceRef = useRef(null); // 滑块防抖定时器
   const bottomSentinelRef = useRef(null);
   const currentVisibleChapterRef = useRef(chapterId);
   const allParagraphsRef = useRef([]);
@@ -851,22 +852,33 @@ export default function ReadChapter() {
             type="range" 
             min="1" 
             max={chapters.length || 1} 
-            value={sliderValue !== null ? sliderValue : Math.max(1, chapters.findIndex(ch => ch.chapter_id === currentVisibleChapterRef.current) + 1)}
+            value={sliderValue !== null ? sliderValue : Math.max(1, chapters.findIndex(ch => ch.chapter_id === currentVisibleChapter) + 1)}
             className="mobile-reader__nav-slider" 
             onChange={(e) => {
-              setSliderValue(parseInt(e.target.value));
-            }}
-            onMouseUp={(e) => {
-              const idx = parseInt(e.target.value) - 1;
-              setSliderValue(null);
-              if (chapters[idx]) goChapter(chapters[idx].chapter_id, true);
-            }}
-            onTouchEnd={(e) => {
-              const val = sliderValue;
-              if (val !== null) {
+              const val = parseInt(e.target.value);
+              setSliderValue(val);
+              // Debounced real-time navigation (300ms)
+              if (sliderDebounceRef.current) clearTimeout(sliderDebounceRef.current);
+              sliderDebounceRef.current = setTimeout(() => {
                 const idx = val - 1;
-                setSliderValue(null);
                 if (chapters[idx]) goChapter(chapters[idx].chapter_id, true);
+              }, 300);
+            }}
+            onMouseUp={() => {
+              // Immediately navigate on release if not yet navigated
+              if (sliderDebounceRef.current) clearTimeout(sliderDebounceRef.current);
+              if (sliderValue !== null) {
+                const idx = sliderValue - 1;
+                if (chapters[idx]) goChapter(chapters[idx].chapter_id, true);
+                setSliderValue(null);
+              }
+            }}
+            onTouchEnd={() => {
+              if (sliderDebounceRef.current) clearTimeout(sliderDebounceRef.current);
+              if (sliderValue !== null) {
+                const idx = sliderValue - 1;
+                if (chapters[idx]) goChapter(chapters[idx].chapter_id, true);
+                setSliderValue(null);
               }
             }}
           />
