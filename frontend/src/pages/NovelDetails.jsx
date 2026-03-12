@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { proxyAPI, bookshelfAPI } from '../api';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ArrowLeft, MoreVertical, Star, ChevronRight, Headphones, Download } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Star, ChevronRight, Headphones, Download, Bookmark } from 'lucide-react';
 
 export default function NovelDetails() {
   const { id } = useParams();
@@ -152,7 +152,7 @@ export default function NovelDetails() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              <span style={{ fontSize: '1.2rem' }}>🧑‍💻</span>
+              <span style={{ fontSize: '1rem', fontWeight: 700, color: '#ff7875' }}>{(novel.author || '作')[0]}</span>
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -190,15 +190,42 @@ export default function NovelDetails() {
           <div style={{ flex: 1, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <div style={{ display: 'flex', marginBottom: '0.5rem' }}>
               {/* Overlapping avatars */}
-              <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#444', border: '1px solid #111', zIndex: 3 }}>🧔</div>
-              <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#555', border: '1px solid #111', marginLeft: '-8px', zIndex: 2 }}>👱‍♀️</div>
-              <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#666', border: '1px solid #111', marginLeft: '-8px', zIndex: 1 }}>👦</div>
+              <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#444', border: '1px solid #111', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: '#fff' }}>A</div>
+              <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#555', border: '1px solid #111', marginLeft: '-8px', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: '#fff' }}>B</div>
+              <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#666', border: '1px solid #111', marginLeft: '-8px', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: '#fff' }}>C</div>
             </div>
             <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>粉丝榜 {'>'}</div>
           </div>
         </div>
 
       </div>{/* End of Immersive Header */}
+
+        {/* Description Section */}
+        <div style={{ backgroundColor: '#1a1a1a', padding: '1.25rem 1rem', marginBottom: '8px' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 600, margin: '0 0 0.75rem 0', color: '#fff' }}>简介</h3>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, ...(showFullDesc ? {} : { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }) }}>
+            {novel.description || '暂无简介'}
+          </p>
+          {novel.description && novel.description.length > 80 && (
+            <span onClick={() => setShowFullDesc(v => !v)} style={{ color: '#ff7875', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-block', marginTop: '0.5rem' }}>
+              {showFullDesc ? '收起' : '展开全部'}
+            </span>
+          )}
+        </div>
+
+        {/* Chapter List Entry */}
+        {chapters.length > 0 && (
+          <Link to={`/read/${id}/${chapters[0].chapter_id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a1a1a', padding: '1rem', marginBottom: '8px', textDecoration: 'none', color: '#fff' }}>
+            <div>
+              <span style={{ fontSize: '1rem', fontWeight: 600 }}>目录</span>
+              <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginLeft: '0.5rem' }}>· 共{chapters.length}章</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>
+              <span>最新: {chapters[chapters.length-1]?.title || ''}</span>
+              <ChevronRight size={16} />
+            </div>
+          </Link>
+        )}
 
         {/* Related Books */}
         {recommendations.length > 0 && (
@@ -232,6 +259,11 @@ export default function NovelDetails() {
         padding: '0.8rem 1rem', display: 'flex', alignItems: 'center', gap: '1.5rem',
         zIndex: 100
       }}>
+        <div onClick={toggleBookshelf} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: inBookshelf ? '#ff7875' : 'rgba(255,255,255,0.8)' }}>
+          <Bookmark size={22} fill={inBookshelf ? '#ff7875' : 'none'} style={{ marginBottom: '4px' }}/>
+          <span style={{ fontSize: '0.7rem' }}>{inBookshelf ? '已加书架' : '加书架'}</span>
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.8)' }}>
           <Headphones size={22} style={{ marginBottom: '4px' }}/>
           <span style={{ fontSize: '0.7rem' }}>听书</span>

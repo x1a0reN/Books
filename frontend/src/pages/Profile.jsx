@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { ArrowLeft, User, LogOut, BookOpen, Clock, Settings } from 'lucide-react';
 
 export default function Profile() {
@@ -7,8 +7,7 @@ export default function Profile() {
   const navigate = useNavigate();
 
   if (!isAuthenticated) {
-    navigate('/login');
-    return null;
+    return <Navigate to="/login" replace />;
   }
 
   const handleLogout = () => {

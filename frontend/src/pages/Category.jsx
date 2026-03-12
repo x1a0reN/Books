@@ -244,7 +244,7 @@ export default function Category() {
                   </div>
                   {/* Bottom overlay for simulated people reading count */}
                   <div style={{ position: 'absolute', bottom: 0, left: 0, width: '60%', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)', padding: '2px', fontSize: '0.65rem', color: '#fff' }}>
-                    {Math.floor(Math.random() * 50 + 10)}万人在看
+                    {((parseInt(book.novel_id || '0', 10) % 50) + 10)}万人在看
                   </div>
                 </div>
 
@@ -270,15 +270,11 @@ export default function Category() {
 
                   {/* Tags row */}
                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: 'auto' }}>
-                    <span style={{ padding: '2px 6px', backgroundColor: 'var(--bg-secondary)', borderRadius: '4px', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                      脑洞
-                    </span>
-                    <span style={{ padding: '2px 6px', backgroundColor: 'var(--bg-secondary)', borderRadius: '4px', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                      系统
-                    </span>
-                    <span style={{ padding: '2px 6px', backgroundColor: 'var(--bg-secondary)', borderRadius: '4px', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                      无敌
-                    </span>
+                    {(book.tags && book.tags.length > 0 ? book.tags.slice(0, 3) : [activeCatName]).map((tag, ti) => (
+                      <span key={ti} style={{ padding: '2px 6px', backgroundColor: 'var(--bg-secondary)', borderRadius: '4px', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </Link>

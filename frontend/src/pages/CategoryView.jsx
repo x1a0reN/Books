@@ -40,7 +40,7 @@ export default function CategoryView() {
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
-      <h2 style={{ marginBottom: '1.5rem' }}>📚 {categoryName}</h2>
+      <h2 style={{ marginBottom: '1.5rem' }}>{categoryName}</h2>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem' }}>加载中...</div>

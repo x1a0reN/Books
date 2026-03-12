@@ -85,7 +85,7 @@ export default function Home() {
             }}
           >
             <Search size={18} />
-            <span style={{ fontSize: '0.9rem' }}>高分之作！！！  ⭐⭐⭐⭐⭐</span>
+            <span style={{ fontSize: '0.9rem' }}>搜索你想看的书</span>
           </div>
           <div onClick={() => navigate('/category')} style={{ color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
             <Grid size={22} />

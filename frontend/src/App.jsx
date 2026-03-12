@@ -10,6 +10,7 @@ import NovelDetails from './pages/NovelDetails';
 import ReadChapter from './pages/ReadChapter';
 import Bookshelf from './pages/Bookshelf';
 import Category from './pages/Category';
+import CategoryView from './pages/CategoryView';
 import Profile from './pages/Profile';
 
 function BottomNav() {
@@ -18,7 +19,7 @@ function BottomNav() {
   const { isAuthenticated } = useAuth();
 
   // Don't show bottom nav on reading, novel details, login, register, or profile
-  if (path.startsWith('/read/') || path.startsWith('/novel/') || path === '/login' || path === '/register' || path === '/profile') {
+  if (path.startsWith('/read/') || path.startsWith('/novel/') || path.startsWith('/category/') || path === '/login' || path === '/register' || path === '/profile') {
     return null;
   }
 
@@ -64,6 +65,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/novel/:id" element={<NovelDetails />} />
           <Route path="/category" element={<Category />} />
+          <Route path="/category/:id" element={<CategoryView />} />
           <Route path="/read/:novelId/:chapterId" element={<ReadChapter />} />
           <Route path="/bookshelf" element={<Bookshelf />} />
           <Route path="/search" element={<SearchResults />} />

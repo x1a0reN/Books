@@ -79,7 +79,6 @@ export default function ReadChapter() {
   const bottomSentinelRef = useRef(null);
   const currentVisibleChapterRef = useRef(chapterId);
   const allParagraphsRef = useRef([]);
-  const scrollThrottleRef = useRef(null);
 
   // ── Performance: scroll merge refs ──
   const scrollTargetRef = useRef(null);   // target scrollTop for merged clicks
