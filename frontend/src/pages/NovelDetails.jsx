@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { proxyAPI, bookshelfAPI } from '../api';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ArrowLeft, MoreVertical, Star, ChevronRight, Headphones, Download, Bookmark } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Star, ChevronRight, ChevronDown, Headphones, Download, Bookmark } from 'lucide-react';
 
 export default function NovelDetails() {
   const { id } = useParams();
@@ -16,6 +16,8 @@ export default function NovelDetails() {
   const [inBookshelf, setInBookshelf] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [showFullDesc, setShowFullDesc] = useState(false);
+  const [showChapterList, setShowChapterList] = useState(false);
+  const [isReversed, setIsReversed] = useState(false);
 
   // Deterministic mock data based on novel ID
   const mockData = useMemo(() => {
@@ -235,7 +237,7 @@ export default function NovelDetails() {
 
         {/* Chapter List Entry */}
         {chapters.length > 0 && (
-          <Link to={`/read/${id}/${chapters[0].chapter_id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a1a1a', padding: '1.25rem 1rem', marginBottom: '8px', textDecoration: 'none', color: '#fff' }}>
+          <div onClick={() => setShowChapterList(true)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a1a1a', padding: '1.25rem 1rem', marginBottom: '8px', cursor: 'pointer', color: '#fff' }}>
             <span style={{ fontSize: '1.05rem', fontWeight: 600 }}>查看目录</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
               <span style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -243,7 +245,7 @@ export default function NovelDetails() {
               </span>
               <ChevronRight size={14} />
             </div>
-          </Link>
+          </div>
         )}
 
         {/* Reviews Section */}
@@ -327,6 +329,72 @@ export default function NovelDetails() {
           免费阅读
         </Link>
       </div>
+
+      {/* Chapter List Modal */}
+      {showChapterList && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 999,
+          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          {/* Click outside to close */}
+          <div style={{ flex: 1 }} onClick={() => setShowChapterList(false)} />
+          
+          {/* Modal Content */}
+          <div style={{
+            height: '85vh', backgroundColor: '#1e1e1e',
+            borderTopLeftRadius: '16px', borderTopRightRadius: '16px',
+            display: 'flex', flexDirection: 'column',
+            animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            overflow: 'hidden'
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.2rem', borderBottom: '1px solid #2a2a2a' }}>
+              <ChevronDown size={28} onClick={() => setShowChapterList(false)} style={{ color: '#aaa', cursor: 'pointer' }} />
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#fff' }}>目录</h3>
+              <span onClick={() => setIsReversed(!isReversed)} style={{ fontSize: '0.9rem', color: '#aaa', cursor: 'pointer', padding: '0.5rem' }}>
+                {isReversed ? '正序' : '倒序'}
+              </span>
+            </div>
+            
+            {/* Subheader */}
+            <div style={{ padding: '1rem 1.2rem', fontSize: '0.85rem', color: '#888', borderBottom: '1px solid #2a2a2a' }}>
+              连载至 {chapters.length > 0 ? chapters[chapters.length-1].title : ''} 连续更新{mockData.updateDays}天
+            </div>
+            
+            {/* List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 1.2rem' }}>
+              {(isReversed ? [...chapters].reverse() : chapters).map((chap, idx) => (
+                <div 
+                  key={chap.chapter_id} 
+                  onClick={() => { setShowChapterList(false); navigate(`/read/${id}/${chap.chapter_id}`); }} 
+                  style={{ 
+                    padding: '1.2rem 0', 
+                    borderBottom: '1px solid #2a2a2a', 
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                    cursor: 'pointer'
+                  }}
+                >
+                  <span style={{ fontSize: '0.95rem', color: '#bbb' }}>{chap.title}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global styles for modal animations */}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }
