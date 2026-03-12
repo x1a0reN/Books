@@ -44,6 +44,7 @@ export default function ReadChapter() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [sliderValue, setSliderValue] = useState(null); // null = not dragging, uses computed value
 
   // ── 阅读设置（持久化到 localStorage）──
   const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('readerFontSize') || '18'));
@@ -671,9 +672,9 @@ export default function ReadChapter() {
     scrollRafRef.current = requestAnimationFrame(animateScroll);
   };
 
-  const goChapter = (chapId) => {
+  const goChapter = (chapId, keepMenu = false) => {
     setSidebarVisible(false);
-    setMenuVisible(false);
+    if (!keepMenu) setMenuVisible(false);
     handleTtsStop();
     navigate(`/read/${novelId}/${chapId}`);
   };
@@ -801,7 +802,11 @@ export default function ReadChapter() {
       </div>
 
       {/* ── 顶部菜单 (全新) ── */}
-      <div className={`mobile-reader__top-bar ${menuVisible ? 'mobile-reader__top-bar--visible' : ''}`}>
+      <div className={`mobile-reader__top-bar ${menuVisible ? 'mobile-reader__top-bar--visible' : ''}`}
+        onPointerDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mobile-reader__top-bar-left">
           <button className="mobile-reader__top-bar-btn" onClick={() => navigate(`/novel/${novelId}`)}>
             <ChevronLeft size={24} />
@@ -831,7 +836,11 @@ export default function ReadChapter() {
       )}
 
       {/* ── 底部功能菜单区 ── */}
-      <div className={`mobile-reader__bottom-bar ${menuVisible ? 'mobile-reader__bottom-bar--visible' : ''}`}>
+      <div className={`mobile-reader__bottom-bar ${menuVisible ? 'mobile-reader__bottom-bar--visible' : ''}`}
+        onPointerDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* 上半部分：透明，章节切换与进度进度条 */}
         <div className="mobile-reader__bottom-nav">
           <button className="mobile-reader__nav-text" onClick={goPrevChapter}
@@ -842,11 +851,23 @@ export default function ReadChapter() {
             type="range" 
             min="1" 
             max={chapters.length || 1} 
-            value={Math.max(1, chapters.findIndex(ch => ch.chapter_id === currentVisibleChapterRef.current) + 1)}
+            value={sliderValue !== null ? sliderValue : Math.max(1, chapters.findIndex(ch => ch.chapter_id === currentVisibleChapterRef.current) + 1)}
             className="mobile-reader__nav-slider" 
             onChange={(e) => {
+              setSliderValue(parseInt(e.target.value));
+            }}
+            onMouseUp={(e) => {
               const idx = parseInt(e.target.value) - 1;
-              if (chapters[idx]) goChapter(chapters[idx].chapter_id);
+              setSliderValue(null);
+              if (chapters[idx]) goChapter(chapters[idx].chapter_id, true);
+            }}
+            onTouchEnd={(e) => {
+              const val = sliderValue;
+              if (val !== null) {
+                const idx = val - 1;
+                setSliderValue(null);
+                if (chapters[idx]) goChapter(chapters[idx].chapter_id, true);
+              }
             }}
           />
           <button className="mobile-reader__nav-text" onClick={goNextChapter}
