@@ -81,6 +81,14 @@ export default function ReadChapter() {
   const allParagraphsRef = useRef([]);
   const scrollThrottleRef = useRef(null);
 
+  // ── Performance: scroll merge refs ──
+  const scrollTargetRef = useRef(null);   // target scrollTop for merged clicks
+  const scrollRafRef = useRef(null);      // current RAF id for merged scroll
+  const prevPageRef = useRef(1);          // avoid redundant setState
+  const prevChapterIdRef = useRef(chapterId); // avoid redundant setState
+  const chapterOffsetsRef = useRef([]);   // cached [{id, top}] for binary search
+  const MAX_LOADED_CHAPTERS = 8;          // cap DOM size
+
   // 保持 loadedChaptersRef 与 state 同步
   useEffect(() => {
     loadedChaptersRef.current = loadedChapters;
@@ -289,18 +297,39 @@ export default function ReadChapter() {
     return () => observer.disconnect();
   }, [loadedChapters, loadingMore, fetchAndAppendChapter]);
 
-  // ── 滚动时检测当前可见章节 + 计算页码（节流 100ms）──
+  // ── Rebuild chapter offset cache when DOM changes ──
   useEffect(() => {
     const container = contentRef.current;
     if (!container) return;
+    // Defer to next frame so DOM has settled
+    requestAnimationFrame(() => {
+      const els = container.querySelectorAll('[data-chapter-id]');
+      const offsets = [];
+      els.forEach(el => {
+        offsets.push({ id: el.getAttribute('data-chapter-id'), top: el.offsetTop });
+      });
+      chapterOffsetsRef.current = offsets;
+    });
+  }, [loadedChapters]);
+
+  // ── RAF-based scroll handler (replaces setTimeout throttle) ──
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+    let rafId = null;
+    let ticking = false;
+
     const doScroll = () => {
-      // 1) 检测当前可见章节
-      const chapterEls = container.querySelectorAll('[data-chapter-id]');
+      ticking = false;
+      const offsets = chapterOffsetsRef.current;
       const scrollY = container.scrollTop + 200;
-      for (let i = chapterEls.length - 1; i >= 0; i--) {
-        if (chapterEls[i].offsetTop <= scrollY) {
-          const visId = chapterEls[i].getAttribute('data-chapter-id');
-          if (visId !== currentVisibleChapterRef.current) {
+
+      // 1) Find current visible chapter via cached offsets (reverse scan)
+      for (let i = offsets.length - 1; i >= 0; i--) {
+        if (offsets[i].top <= scrollY) {
+          const visId = offsets[i].id;
+          if (visId !== prevChapterIdRef.current) {
+            prevChapterIdRef.current = visId;
             currentVisibleChapterRef.current = visId;
             setCurrentVisibleChapter(visId);
             window.history.replaceState(null, '', `/read/${novelId}/${visId}`);
@@ -308,27 +337,31 @@ export default function ReadChapter() {
           break;
         }
       }
-      // 2) 计算虚拟页码
+
+      // 2) Page calculation (only setState when changed)
       const vh = container.clientHeight;
       if (vh > 0) {
         const page = Math.floor(container.scrollTop / vh) + 1;
         const total = Math.max(1, Math.ceil(container.scrollHeight / vh));
-        setCurrentPage(page);
+        if (page !== prevPageRef.current) {
+          prevPageRef.current = page;
+          setCurrentPage(page);
+        }
         setTotalPages(total);
       }
     };
+
     const handleScroll = () => {
-      if (scrollThrottleRef.current) return;
-      scrollThrottleRef.current = setTimeout(() => {
-        scrollThrottleRef.current = null;
-        doScroll();
-      }, 100);
+      if (!ticking) {
+        ticking = true;
+        rafId = requestAnimationFrame(doScroll);
+      }
     };
     container.addEventListener('scroll', handleScroll, { passive: true });
     doScroll();
     return () => {
       container.removeEventListener('scroll', handleScroll);
-      if (scrollThrottleRef.current) clearTimeout(scrollThrottleRef.current);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [novelId, loadedChapters]);
 
@@ -606,17 +639,37 @@ export default function ReadChapter() {
     const h = window.innerHeight;
     const container = contentRef.current;
     if (!container) return;
-    const scrollAmount = container.clientHeight * 0.85; // 滚动 85% 视口高度
+    const scrollAmount = container.clientHeight * 0.85;
     if (y < h / 3) {
-      // 上1/3：翻上一页
-      container.scrollBy({ top: -scrollAmount, behavior: 'smooth' });
+      // Upper 1/3: scroll up — merge consecutive clicks
+      const current = scrollTargetRef.current ?? container.scrollTop;
+      scrollTargetRef.current = Math.max(0, current - scrollAmount);
     } else if (y > (h * 2) / 3) {
-      // 下1/3：翻下一页
-      container.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+      // Lower 1/3: scroll down — merge consecutive clicks
+      const current = scrollTargetRef.current ?? container.scrollTop;
+      scrollTargetRef.current = current + scrollAmount;
     } else {
-      // 中1/3：切换菜单
       toggleMenu();
+      return;
     }
+    // Drive one smooth animation via RAF
+    if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    const animateScroll = () => {
+      const target = scrollTargetRef.current;
+      if (target == null) return;
+      const current = container.scrollTop;
+      const diff = target - current;
+      if (Math.abs(diff) < 1) {
+        container.scrollTop = target;
+        scrollTargetRef.current = null;
+        scrollRafRef.current = null;
+        return;
+      }
+      // Ease: move 20% of remaining distance per frame (smooth but fast)
+      container.scrollTop = current + diff * 0.2;
+      scrollRafRef.current = requestAnimationFrame(animateScroll);
+    };
+    scrollRafRef.current = requestAnimationFrame(animateScroll);
   };
 
   const goChapter = (chapId) => {
@@ -678,10 +731,22 @@ export default function ReadChapter() {
         style={{
           fontSize: `${fontSize}px`,
           lineHeight: lineHeight,
-          filter: `brightness(${brightness / 100})${eyeCare ? ' sepia(0.3)' : ''}`,
+          fontFamily: fontFamily,
+          willChange: 'transform',
         }}
         onClick={handleContentClick}
       >
+        {/* Brightness & eye-care overlay (avoids filter repaint on scroll) */}
+        {(brightness < 100 || eyeCare) && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: eyeCare ? 'rgba(180, 140, 60, 0.15)' : 'rgba(0,0,0,0)',
+            opacity: brightness < 100 ? (1 - brightness / 100) : 0,
+            pointerEvents: 'none', zIndex: 9999,
+            ...(brightness < 100 ? { backgroundColor: `rgba(0,0,0,${1 - brightness / 100})` } : {}),
+            ...(eyeCare ? { backgroundColor: `rgba(180, 140, 60, ${0.15 + (1 - brightness / 100) * 0.3})` } : {}),
+          }} />
+        )}
         {loadedChapters.map((chap, chapterIndex) => {
           const isChapterSpeaking = chapterIndex === ttsCurrentIdx;
           return (
