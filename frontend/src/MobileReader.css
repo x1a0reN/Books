@@ -1,0 +1,644 @@
+/* ============================================
+   MobileReader.css — 沉浸式移动阅读样式
+   ============================================ */
+
+/* ── 阅读背景色主题变量 ── */
+:root {
+  --reader-bg: #1a1a1a;
+  --reader-text: #a3a3a3;
+  --reader-line-height: 1.8;
+  --reader-accent: #e5a460; /* 截图中的淡橘橙色 */
+  --reader-panel-bg: #1d1d1d;
+  --reader-border: rgba(255, 255, 255, 0.08);
+}
+
+[data-reader-theme="white"] {
+  --reader-bg: #ffffff;
+  --reader-text: #333333;
+  --reader-panel-bg: #f8f8f8;
+  --reader-border: rgba(0, 0, 0, 0.08);
+  --reader-accent: #d88130;
+}
+[data-reader-theme="yellow"] {
+  --reader-bg: #f5ead3;
+  --reader-text: #4a3c28;
+  --reader-panel-bg: #eee4cc;
+  --reader-border: rgba(74, 60, 40, 0.1);
+  --reader-accent: #c46a1e;
+}
+[data-reader-theme="green"] {
+  --reader-bg: #cce3cc;
+  --reader-text: #2a3a2a;
+  --reader-panel-bg: #c2d8c2;
+  --reader-border: rgba(42, 58, 42, 0.1);
+  --reader-accent: #2e7a2e;
+}
+[data-reader-theme="pink"] {
+  --reader-bg: #f1dae0;
+  --reader-text: #4a2a32;
+  --reader-panel-bg: #e6d0d6;
+  --reader-border: rgba(74, 42, 50, 0.1);
+  --reader-accent: #a54a5c;
+}
+[data-reader-theme="gray"] {
+  --reader-bg: #e2e2e2;
+  --reader-text: #222222;
+  --reader-panel-bg: #d6d6d6;
+  --reader-border: rgba(34, 34, 34, 0.1);
+  --reader-accent: #333333;
+}
+[data-reader-theme="night"] {
+  --reader-bg: #1a1a1a;
+  --reader-text: #a3a3a3;
+  --reader-panel-bg: #1d1d1d;
+  --reader-border: rgba(255, 255, 255, 0.08);
+  --reader-accent: #e5a460;
+}
+
+/* ── 全屏阅读容器 ── */
+.mobile-reader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: var(--reader-bg);
+  color: var(--reader-text);
+  overflow: hidden;
+  font-family: var(--font-family);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ── 触控区域划分 ── */
+.mobile-reader__tap-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+}
+
+.mobile-reader__tap-left,
+.mobile-reader__tap-center,
+.mobile-reader__tap-right {
+  height: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-reader__tap-left  { flex: 1; }
+.mobile-reader__tap-center { flex: 1; }
+.mobile-reader__tap-right  { flex: 1; }
+
+/* ── 内容滚动区域 ── */
+.mobile-reader__content {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  z-index: 5;
+  padding: env(safe-area-inset-top, 0px) 1.25rem env(safe-area-inset-bottom, 0px);
+}
+
+/* ── TTS 当前朗读段落高亮 ── */
+.mobile-reader__para--speaking {
+  background: rgba(255, 200, 50, 0.12);
+  border-left: 3px solid rgba(255, 200, 50, 0.6);
+  padding-left: 0.75rem;
+  margin-left: -0.75rem;
+  border-radius: 4px;
+  transition: background 0.3s ease, border-left 0.3s ease;
+}
+
+/* ── TTS 当前朗读章节高亮 ── */
+.mobile-reader__chapter--speaking {
+  border-left: 3px solid rgba(255, 200, 50, 0.4);
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+  transition: border-left 0.3s ease;
+}
+
+/* ── 章节分隔线 ── */
+.mobile-reader__chapter-title {
+  text-align: center;
+  padding: 3rem 1rem 2rem;
+  color: var(--reader-text);
+}
+
+/* ── 顶部菜单 (全新极简结构) ── */
+.mobile-reader__top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: calc(env(safe-area-inset-top, 12px) + 0.5rem) 1rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  transform: translateY(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--reader-text);
+}
+.mobile-reader__top-bar--visible {
+  transform: translateY(0);
+}
+.mobile-reader__top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+.mobile-reader__top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.mobile-reader__top-bar-btn {
+  background: none;
+  border: none;
+  color: var(--reader-text);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.mobile-reader__top-bar-btn:active {
+  opacity: 1;
+}
+
+/* ── 底部 常驻 Footer（电池、时间、进度） ── */
+.mobile-reader__footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50; /* 在菜单之下 */
+  padding: 0 1.25rem calc(env(safe-area-inset-bottom, 8px) + 0.5rem);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+  font-size: 0.7rem;
+  color: var(--reader-text);
+  opacity: 0.5;
+}
+.mobile-reader__footer-left {
+  display: flex;
+  align-items: center;
+}
+.mobile-reader__footer-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.mobile-reader__battery-icon {
+  width: 22px;
+  height: 10px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 1px;
+}
+.mobile-reader__battery-icon::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 0 1px 1px 0;
+}
+.mobile-reader__battery-level {
+  height: 100%;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+/* ── 底部功能菜单区（分两层） ── */
+.mobile-reader__bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+.mobile-reader__bottom-bar--visible {
+  transform: translateY(0);
+}
+/* 上半部分：透明，包含上一章、进度条、下一章 */
+.mobile-reader__bottom-nav {
+  padding: 1rem 1.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(to top, var(--reader-panel-bg) 0%, transparent 100%);
+}
+.mobile-reader__nav-text {
+  font-size: 0.8rem;
+  color: var(--reader-text);
+  white-space: nowrap;
+  background: none;
+  border: none;
+  padding: 0.5rem 0;
+}
+.mobile-reader__nav-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--reader-border);
+  border-radius: 2px;
+  outline: none;
+}
+.mobile-reader__nav-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--reader-text);
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+/* 下半部分：实色背景，包含三个大图标 */
+.mobile-reader__bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--reader-panel-bg);
+  padding: 0.5rem 0 calc(env(safe-area-inset-bottom, 8px) + 0.5rem);
+}
+.mobile-reader__action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--reader-text);
+  opacity: 0.6;
+  font-size: 0.7rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0.5rem;
+  transition: opacity 0.2s;
+}
+.mobile-reader__action-btn:active {
+  opacity: 1;
+}
+
+/* ── 目录侧边栏 ── */
+.mobile-reader__sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.mobile-reader__sidebar-overlay--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-reader__sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 201;
+  width: 75%;
+  max-width: 320px;
+  background: var(--reader-bg);
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+}
+.mobile-reader__sidebar--visible {
+  transform: translateX(0);
+}
+
+.mobile-reader__sidebar-header {
+  padding: calc(env(safe-area-inset-top, 12px) + 0.75rem) 1.25rem 0.5rem;
+}
+.mobile-reader__sidebar-book-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.mobile-reader__sidebar-cover {
+  width: 48px;
+  height: 64px;
+  border-radius: 4px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.mobile-reader__sidebar-book-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--reader-text);
+  margin-bottom: 0.25rem;
+}
+.mobile-reader__sidebar-tabs {
+  display: flex;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--reader-border);
+  padding-bottom: 0.5rem;
+}
+.mobile-reader__sidebar-tab {
+  font-size: 0.95rem;
+  color: var(--reader-text);
+  opacity: 0.5;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.mobile-reader__sidebar-tab--active {
+  opacity: 1;
+  font-weight: 600;
+}
+.mobile-reader__sidebar-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.75rem;
+  color: var(--reader-text);
+  opacity: 0.6;
+}
+
+.mobile-reader__sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0;
+}
+
+.mobile-reader__sidebar-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 0.85rem 1.25rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(128,128,128,0.05); /* very faint line */
+  cursor: pointer;
+}
+.mobile-reader__sidebar-item-title {
+  font-size: 0.9rem;
+  color: var(--reader-text);
+  transition: color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.mobile-reader__sidebar-item-count {
+  font-size: 0.65rem;
+  color: var(--reader-text);
+  opacity: 0.4;
+  margin-left: 1rem;
+}
+.mobile-reader__sidebar-item:active {
+  background: rgba(128,128,128,0.05);
+}
+.mobile-reader__sidebar-item--active .mobile-reader__sidebar-item-title {
+  color: var(--reader-accent);
+  font-weight: 600;
+}
+.mobile-reader__sidebar-item:active {
+  background: rgba(128,128,128,0.15);
+}
+.mobile-reader__sidebar-item--active {
+  color: var(--primary, #8AB4F8);
+  font-weight: 600;
+  background: rgba(138, 180, 248, 0.08);
+}
+
+/* ── 设置面板 ── */
+.mobile-reader__settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.mobile-reader__settings-overlay--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-reader__settings-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 151;
+  background: var(--reader-panel-bg);
+  border-radius: 16px 16px 0 0;
+  padding: 1.5rem 1.25rem calc(env(safe-area-inset-bottom, 8px) + 1.5rem);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+}
+.mobile-reader__settings-panel--visible {
+  transform: translateY(0);
+}
+
+.mobile-reader__settings-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+.mobile-reader__settings-label {
+  font-size: 0.8rem;
+  color: var(--reader-text);
+  opacity: 0.6;
+  width: 2.5rem; /* 固定宽度，方便对齐 */
+  flex-shrink: 0;
+}
+.mobile-reader__settings-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+/* 通用药丸按钮 (Pill) */
+.mobile-reader__pill-btn {
+  padding: 0.5rem 0.75rem;
+  border-radius: 16px;
+  background: rgba(128, 128, 128, 0.1);
+  border: 1px solid transparent;
+  color: var(--reader-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex: 1;
+}
+.mobile-reader__pill-btn--active {
+  border-color: var(--reader-accent);
+  color: var(--reader-accent);
+}
+.mobile-reader__pill-btn:active {
+  opacity: 0.7;
+}
+
+/* 圆形色块 */
+.mobile-reader__bg-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mobile-reader__bg-circle--active {
+  border-color: var(--reader-accent);
+}
+
+/* 圆角背景纹理色块 */
+.mobile-reader__bg-rect {
+  flex: 1;
+  height: 32px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--reader-text);
+  /* background handled inline usually */
+}
+.mobile-reader__bg-rect--active {
+  border-color: var(--reader-accent);
+}
+
+/* 通用的带厚度的滑块 */
+.mobile-reader__slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(128,128,128,0.2);
+  outline: none;
+}
+.mobile-reader__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #a3a3a3; /* 滑块手柄颜色 */
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+  cursor: pointer;
+}
+
+/* ── 悬浮听书按钮 ── */
+.mobile-reader__tts-fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: calc(env(safe-area-inset-bottom, 8px) + 9rem);
+  z-index: 90;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary, #8AB4F8);
+  color: #121212;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.mobile-reader__tts-fab:active {
+  transform: scale(0.9);
+}
+
+/* TTS 播放中动画 */
+.mobile-reader__tts-fab--playing {
+  animation: tts-pulse 1.5s ease-in-out infinite;
+}
+@keyframes tts-pulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  50% { box-shadow: 0 4px 16px rgba(138,180,248,0.6), 0 0 20px rgba(138,180,248,0.3); }
+}
+
+/* ── 翻页过渡动画 ── */
+.mobile-reader__page {
+  min-height: 100vh;
+  padding: 3rem 0;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-reader__page-enter-next {
+  animation: page-slide-up 0.35s ease forwards;
+}
+.mobile-reader__page-enter-prev {
+  animation: page-slide-down 0.35s ease forwards;
+}
+
+@keyframes page-slide-up {
+  from { transform: translateY(30%); opacity: 0.5; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+@keyframes page-slide-down {
+  from { transform: translateY(-30%); opacity: 0.5; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── 章节内容段落 ── */
+.mobile-reader__para {
+  text-indent: 2em;
+  margin-bottom: 0.5em;
+  padding: 0.2rem 0;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+.mobile-reader__para--highlight {
+  background: rgba(138, 180, 248, 0.12);
+  border-left: 3px solid var(--primary, #8AB4F8);
+  padding-left: 0.5rem;
+}
+
+/* ── 加载状态 ── */
+.mobile-reader__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 1rem;
+  color: var(--reader-text);
+  opacity: 0.6;
+}
+

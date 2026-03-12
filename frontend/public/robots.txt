@@ -1,0 +1,7 @@
+# 禁止所有搜索引擎收录和抓取
+User-agent: *
+Disallow: /
+
+# 禁止所有爬虫抓取 API
+User-agent: *
+Disallow: /api/
