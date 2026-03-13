@@ -40,6 +40,22 @@ export default function ReadChapter() {
   const [chapters, setChapters] = useState([]);
   const [novelTitle, setNovelTitle] = useState('');
 
+  // 过滤掉非正文条目（卷名、公告、作者说明等）
+  const filteredChapters = useMemo(() => {
+    return chapters.filter(ch => {
+      const t = ch.title?.trim() || '';
+      // 保留包含"章"字的条目，或以数字开头的条目
+      if (/第.{1,6}章/.test(t)) return true;
+      if (/^\d+[.、\s]/.test(t)) return true;
+      if (/^Chapter\s/i.test(t)) return true;
+      // 排除明显的非章节条目
+      if (/^第.{1,4}卷$/.test(t)) return false;
+      if (/^(序|序章|楔子|番外|后记|尾声|完结感言|上架感言|更新|公告|致读者|严正声明|作品相关)/.test(t)) return false;
+      if (t.length <= 4) return false; // 太短的标题通常是卷名
+      return true; // 其余保留
+    });
+  }, [chapters]);
+
   // ── UI 状态 ──
   const [menuVisible, setMenuVisible] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -624,12 +640,20 @@ export default function ReadChapter() {
     setTtsOpen(false);
   };
 
+  // 按住时停止滚动
+  const handleContentPointerDown = () => {
+    if (scrollRafRef.current) {
+      cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
+      scrollTargetRef.current = null;
+    }
+  };
+
   // 统一点击处理：上/中/下 三段式
   // 上1/3 → 丝滑翻上一页, 中1/3 → 切换菜单, 下1/3 → 丝滑翻下一页
   const handleContentClick = (e) => {
     if (e.target.closest('button, a, input, [role="button"]')) return;
     if (menuVisible || sidebarVisible || settingsVisible || ttsOpen) {
-      // 菜单已打开时，点击内容区域关闭菜单
       setMenuVisible(false);
       setSidebarVisible(false);
       setSettingsVisible(false);
@@ -641,33 +665,32 @@ export default function ReadChapter() {
     const container = contentRef.current;
     if (!container) return;
     const scrollAmount = container.clientHeight * 0.85;
+
+    // 每次点击都从当前实际位置出发（不累加）
+    const currentPos = container.scrollTop;
     if (y < h / 3) {
-      // Upper 1/3: scroll up — merge consecutive clicks
-      const current = scrollTargetRef.current ?? container.scrollTop;
-      scrollTargetRef.current = Math.max(0, current - scrollAmount);
+      scrollTargetRef.current = Math.max(0, currentPos - scrollAmount);
     } else if (y > (h * 2) / 3) {
-      // Lower 1/3: scroll down — merge consecutive clicks
-      const current = scrollTargetRef.current ?? container.scrollTop;
-      scrollTargetRef.current = current + scrollAmount;
+      scrollTargetRef.current = currentPos + scrollAmount;
     } else {
       toggleMenu();
       return;
     }
-    // Drive one smooth animation via RAF
+
+    // 取消旧动画，开新动画
     if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
     const animateScroll = () => {
       const target = scrollTargetRef.current;
-      if (target == null) return;
-      const current = container.scrollTop;
-      const diff = target - current;
+      if (target == null) { scrollRafRef.current = null; return; }
+      const cur = container.scrollTop;
+      const diff = target - cur;
       if (Math.abs(diff) < 1) {
         container.scrollTop = target;
         scrollTargetRef.current = null;
         scrollRafRef.current = null;
         return;
       }
-      // Ease: move 20% of remaining distance per frame (smooth but fast)
-      container.scrollTop = current + diff * 0.2;
+      container.scrollTop = cur + diff * 0.15;
       scrollRafRef.current = requestAnimationFrame(animateScroll);
     };
     scrollRafRef.current = requestAnimationFrame(animateScroll);
@@ -736,6 +759,7 @@ export default function ReadChapter() {
           willChange: 'transform',
         }}
         onClick={handleContentClick}
+        onPointerDown={handleContentPointerDown}
       >
         {/* Brightness & eye-care overlay (avoids filter repaint on scroll) */}
         {(brightness < 100 || eyeCare) && (
@@ -851,8 +875,8 @@ export default function ReadChapter() {
           <input 
             type="range" 
             min="1" 
-            max={chapters.length || 1} 
-            value={sliderValue !== null ? sliderValue : Math.max(1, chapters.findIndex(ch => ch.chapter_id === currentVisibleChapter) + 1)}
+            max={filteredChapters.length || 1} 
+            value={sliderValue !== null ? sliderValue : Math.max(1, filteredChapters.findIndex(ch => ch.chapter_id === currentVisibleChapter) + 1)}
             className="mobile-reader__nav-slider" 
             onChange={(e) => {
               const val = parseInt(e.target.value);
@@ -861,15 +885,14 @@ export default function ReadChapter() {
               if (sliderDebounceRef.current) clearTimeout(sliderDebounceRef.current);
               sliderDebounceRef.current = setTimeout(() => {
                 const idx = val - 1;
-                if (chapters[idx]) goChapter(chapters[idx].chapter_id, true);
+                if (filteredChapters[idx]) goChapter(filteredChapters[idx].chapter_id, true);
               }, 300);
             }}
             onMouseUp={() => {
-              // Immediately navigate on release if not yet navigated
               if (sliderDebounceRef.current) clearTimeout(sliderDebounceRef.current);
               if (sliderValue !== null) {
                 const idx = sliderValue - 1;
-                if (chapters[idx]) goChapter(chapters[idx].chapter_id, true);
+                if (filteredChapters[idx]) goChapter(filteredChapters[idx].chapter_id, true);
                 setSliderValue(null);
               }
             }}
@@ -877,7 +900,7 @@ export default function ReadChapter() {
               if (sliderDebounceRef.current) clearTimeout(sliderDebounceRef.current);
               if (sliderValue !== null) {
                 const idx = sliderValue - 1;
-                if (chapters[idx]) goChapter(chapters[idx].chapter_id, true);
+                if (filteredChapters[idx]) goChapter(filteredChapters[idx].chapter_id, true);
                 setSliderValue(null);
               }
             }}
