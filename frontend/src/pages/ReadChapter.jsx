@@ -62,8 +62,13 @@ export default function ReadChapter() {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [sliderValue, setSliderValue] = useState(null); // null = not dragging, uses computed value
 
+  // 章节切换时重置滑块值，确保显示正确位置
+  useEffect(() => {
+    setSliderValue(null);
+  }, [chapterId]);
+
   // ── 阅读设置（持久化到 localStorage）──
-  const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('readerFontSize') || '18'));
+  const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('readerFontSize') || '25'));
   const [lineHeight, setLineHeight] = useState(() => localStorage.getItem('readerLineHeight') || '1.8');
   const [readerTheme, setReaderTheme] = useState(() => localStorage.getItem('readerTheme') || 'night');
   const [brightness, setBrightness] = useState(() => parseInt(localStorage.getItem('readerBrightness') || '100'));
@@ -654,6 +659,14 @@ export default function ReadChapter() {
   // 上1/3 → 丝滑翻上一页, 中1/3 → 切换菜单, 下1/3 → 丝滑翻下一页
   const handleContentClick = (e) => {
     if (e.target.closest('button, a, input, [role="button"]')) return;
+
+    // 如果有文本被选中，优先取消选中，不做其他操作
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim().length > 0) {
+      selection.removeAllRanges();
+      return;
+    }
+
     if (menuVisible || sidebarVisible || settingsVisible || ttsOpen) {
       setMenuVisible(false);
       setSidebarVisible(false);
@@ -665,7 +678,7 @@ export default function ReadChapter() {
     const h = window.innerHeight;
     const container = contentRef.current;
     if (!container) return;
-    const scrollAmount = container.clientHeight * 0.85;
+    const scrollAmount = container.clientHeight * 0.95;
 
     // 每次点击从当前实际位置出发
     const currentPos = container.scrollTop;
