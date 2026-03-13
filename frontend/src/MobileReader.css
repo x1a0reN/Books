@@ -92,7 +92,7 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   z-index: 5;
-  padding: env(safe-area-inset-top, 0px) 1.25rem env(safe-area-inset-bottom, 0px);
+  padding: env(safe-area-inset-top, 12px) 1.25rem calc(env(safe-area-inset-bottom, 8px) + 2.5rem);
 }
 
 /* ── TTS 当前朗读段落高亮 ── */
