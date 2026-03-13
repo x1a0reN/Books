@@ -640,13 +640,14 @@ export default function ReadChapter() {
     setTtsOpen(false);
   };
 
-  // 按住时停止滚动
+  // 按住时停止滚动（取消原生 smooth scroll）
   const handleContentPointerDown = () => {
-    if (scrollRafRef.current) {
-      cancelAnimationFrame(scrollRafRef.current);
-      scrollRafRef.current = null;
-      scrollTargetRef.current = null;
-    }
+    const container = contentRef.current;
+    if (!container) return;
+    // 设置 scrollTop 为当前值可以中断 native smooth scroll
+    container.style.scrollBehavior = 'auto';
+    container.scrollTop = container.scrollTop;
+    container.style.scrollBehavior = '';
   };
 
   // 统一点击处理：上/中/下 三段式
@@ -666,34 +667,20 @@ export default function ReadChapter() {
     if (!container) return;
     const scrollAmount = container.clientHeight * 0.85;
 
-    // 每次点击都从当前实际位置出发（不累加）
+    // 每次点击从当前实际位置出发
     const currentPos = container.scrollTop;
+    let targetPos;
     if (y < h / 3) {
-      scrollTargetRef.current = Math.max(0, currentPos - scrollAmount);
+      targetPos = Math.max(0, currentPos - scrollAmount);
     } else if (y > (h * 2) / 3) {
-      scrollTargetRef.current = currentPos + scrollAmount;
+      targetPos = currentPos + scrollAmount;
     } else {
       toggleMenu();
       return;
     }
 
-    // 取消旧动画，开新动画
-    if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
-    const animateScroll = () => {
-      const target = scrollTargetRef.current;
-      if (target == null) { scrollRafRef.current = null; return; }
-      const cur = container.scrollTop;
-      const diff = target - cur;
-      if (Math.abs(diff) < 1) {
-        container.scrollTop = target;
-        scrollTargetRef.current = null;
-        scrollRafRef.current = null;
-        return;
-      }
-      container.scrollTop = cur + diff * 0.15;
-      scrollRafRef.current = requestAnimationFrame(animateScroll);
-    };
-    scrollRafRef.current = requestAnimationFrame(animateScroll);
+    // 使用原生 smooth scroll — 浏览器合成线程执行，零掉帧
+    container.scrollTo({ top: targetPos, behavior: 'smooth' });
   };
 
   const goChapter = (chapId, keepMenu = false) => {
